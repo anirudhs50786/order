@@ -26,7 +26,7 @@ public class CartEntity {
     private int userId;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<CartItemsEntity> cartItems;
+    private List<CartItemEntity> cartItems;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

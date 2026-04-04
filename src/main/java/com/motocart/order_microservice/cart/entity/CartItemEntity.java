@@ -14,7 +14,7 @@ import java.time.Instant;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartItemsEntity {
+public class CartItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
