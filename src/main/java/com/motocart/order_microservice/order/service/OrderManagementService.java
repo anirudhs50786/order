@@ -16,6 +16,7 @@ import com.motocart.order_microservice.order.repository.OrderRepository;
 import com.motocart.order_microservice.util.Mapper;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,7 +65,17 @@ public class OrderManagementService {
     }
 
     private void processOrderConfirmedEvent(OrderEvent orderEvent) {
-        // process order confirmed event
+
+        orderRepository.findById(orderEvent.getOrderId()).ifPresent(orderEntity -> {
+            orderEntity.setOrderStatus(orderEvent.getOrderStatus());
+            orderEntity.setUpdatedAt(Instant.now());
+            orderRepository.save(orderEntity);
+            inventoryEventProducer.sendInventoryEvent(InventoryEvent.builder()
+                    .actionType(InventoryActionType.DEDUCT)
+                    .orderId(orderEvent.getOrderId())
+                    .build());
+            //send email
+        });
     }
 
     private void processPaymentCompletedEvent(OrderEvent orderEvent) {

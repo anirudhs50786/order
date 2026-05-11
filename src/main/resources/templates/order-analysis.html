@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #333; }
+
+        /* ── PAGE BREAKS ── */
+        .page { padding: 40px; page-break-after: always; break-after: page; }
+        .page:last-child { page-break-after: avoid; break-after: avoid; }
+
+        /* ── SHARED ── */
+        .section-title { font-size: 13px; font-weight: bold; color: #e63946; text-transform: uppercase;
+                         border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 14px; margin-top: 24px; }
+        .label { color: #777; font-size: 11px; }
+        .value { font-weight: bold; font-size: 13px; margin-top: 2px; }
+        .highlight { color: #e63946; }
+        .green { color: #28a745; }
+        .grid-2 { display: flex; gap: 20px; }
+        .grid-2 .col { flex: 1; }
+        .stat-box { background: #f8f8f8; border-left: 3px solid #e63946; padding: 12px 16px; border-radius: 4px; }
+        .stat-grid { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+        .stat-grid .stat-box { flex: 1; min-width: 120px; }
+        .chart-img { width: 100%; max-height: 260px; object-fit: contain; margin-top: 10px; }
+        .chart-half { width: 48%; }
+        .charts-row { display: flex; gap: 20px; align-items: flex-start; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { padding: 8px 12px; text-align: left; font-size: 11px; color: #555; background: #f8f8f8; border-bottom: 1px solid #ddd; }
+        td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+        .footer { text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 12px; margin-top: 30px; }
+        .disclaimer-box { background: #fff8e1; border-left: 3px solid #ffc107; padding: 12px 16px; border-radius: 4px; font-size: 12px; color: #555; margin-top: 10px; }
+        .toc-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ddd; font-size: 13px; }
+        .toc-item span:last-child { color: #777; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .badge-green { background: #d4edda; color: #155724; }
+        .badge-red { background: #f8d7da; color: #721c24; }
+        .badge-yellow { background: #fff3cd; color: #856404; }
+
+        /* ── PAGE 1: COVER ── */
+        .cover { display: flex; flex-direction: column; justify-content: space-between; min-height: 750px; }
+        .cover-header { border-bottom: 3px solid #e63946; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .cover-logo { font-size: 28px; font-weight: bold; color: #e63946; }
+        .cover-logo img { height: 48px; }
+        .cover-body { text-align: center; padding: 60px 0 40px; }
+        .cover-body h1 { font-size: 28px; color: #222; margin-bottom: 10px; }
+        .cover-body .timeline { font-size: 14px; color: #777; margin-top: 8px; }
+        .cover-customer { background: #f8f8f8; border-radius: 6px; padding: 20px 24px; }
+        .cover-customer p { margin-bottom: 6px; font-size: 13px; }
+        .cover-footer { text-align: right; font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 1 — COVER                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="cover">
+        <div class="cover-header">
+            <div class="cover-logo">
+                <img th:if="${report.coverPage.logoUrl != null}" th:src="${report.coverPage.logoUrl}" alt="logo"/>
+                <span th:if="${report.coverPage.logoUrl == null}" th:text="${report.coverPage.firmName}"></span>
+            </div>
+            <div style="font-size:12px; color:#777;">Confidential — For Customer Use Only</div>
+        </div>
+
+        <div class="cover-body">
+            <h1 th:text="${report.coverPage.documentTitle}"></h1>
+            <p class="timeline">
+                Analysis Period:
+                <strong th:text="${#temporals.format(report.coverPage.timelineFrom, 'dd MMM yyyy')}"></strong>
+                &nbsp;to&nbsp;
+                <strong th:text="${#temporals.format(report.coverPage.timelineTo, 'dd MMM yyyy')}"></strong>
+            </p>
+        </div>
+
+        <div class="cover-customer">
+            <p class="label">Prepared For</p>
+            <p style="font-size:16px; font-weight:bold; margin-top:4px;" th:text="${report.coverPage.customerName}"></p>
+            <p th:text="${report.coverPage.email}"></p>
+            <p th:text="${report.coverPage.phone}"></p>
+        </div>
+
+        <div class="cover-footer">
+            Generated on <span th:text="${#temporals.format(report.coverPage.generatedAt, 'dd MMM yyyy, hh:mm a')}"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 2 — TABLE OF CONTENTS                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Table of Contents</div>
+    <div class="toc-item"><span>1. Cover Page</span><span>1</span></div>
+    <div class="toc-item"><span>2. Table of Contents</span><span>2</span></div>
+    <div class="toc-item"><span>3. Introduction &amp; Disclaimer</span><span>3</span></div>
+    <div class="toc-item"><span>4. Purchase Analysis</span><span>4</span></div>
+    <div class="toc-item"><span>5. Payment Analysis</span><span>5</span></div>
+    <div class="toc-item"><span>6. Delivery Analysis</span><span>6</span></div>
+    <div class="toc-item"><span>7. Order Status Summary</span><span>7</span></div>
+    <div class="toc-item"><span>8. Spending Trend</span><span>8</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 3 — INTRODUCTION & DISCLAIMER              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Introduction</div>
+    <p th:text="${report.introPage.documentSummary}" style="line-height:1.8;"></p>
+
+    <div class="section-title">Data Source</div>
+    <p th:text="${report.introPage.dataSourceNote}" style="line-height:1.8;"></p>
+
+    <div class="section-title">Disclaimer</div>
+    <div class="disclaimer-box" th:text="${report.introPage.disclaimer}"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 4 — PURCHASE ANALYSIS                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Purchase Analysis</div>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <p class="label">Total Orders Placed</p>
+            <p class="value" th:text="${report.purchaseAnalysis.totalOrdersPlaced}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Total Items Bought</p>
+            <p class="value" th:text="${report.purchaseAnalysis.totalItemsBought}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Most Bought Product</p>
+            <p class="value highlight" th:text="${report.purchaseAnalysis.mostBoughtProduct}"></p>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-half">
+            <div class="section-title">Category Breakdown</div>
+            <img th:src="'data:image/png;base64,' + ${report.purchaseAnalysis.categoryPieChartBase64}" class="chart-img" alt="Category Pie Chart"/>
+        </div>
+        <div class="chart-half">
+            <div class="section-title">Items Bought Per Month</div>
+            <img th:src="'data:image/png;base64,' + ${report.purchaseAnalysis.monthlyBarChartBase64}" class="chart-img" alt="Monthly Bar Chart"/>
+        </div>
+    </div>
+
+    <div class="section-title">Top 5 Products</div>
+    <table>
+        <thead>
+            <tr><th>#</th><th>Product</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="product, i : ${report.purchaseAnalysis.top5Products}">
+                <td th:text="${i.count}"></td>
+                <td th:text="${product}"></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 5 — PAYMENT ANALYSIS                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Payment Analysis</div>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <p class="label">Total Spent</p>
+            <p class="value highlight" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.totalSpent, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Total Saved</p>
+            <p class="value green" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.totalSaved, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Avg Order Value</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.averageOrderValue, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Largest Order</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.largestOrderValue, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Delivery Charges Paid</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.totalDeliveryCharges, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Platform Fees Paid</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.paymentAnalysis.totalPlatformFees, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+    </div>
+
+    <div class="section-title">Payment Method Breakdown</div>
+    <div class="charts-row">
+        <div class="chart-half">
+            <img th:src="'data:image/png;base64,' + ${report.paymentAnalysis.paymentMethodPieChartBase64}" class="chart-img" alt="Payment Method Chart"/>
+        </div>
+        <div class="chart-half">
+            <table>
+                <thead><tr><th>Method</th><th>Orders</th></tr></thead>
+                <tbody>
+                    <tr th:each="entry : ${report.paymentAnalysis.paymentMethodBreakdown}">
+                        <td th:text="${entry.key}"></td>
+                        <td th:text="${entry.value}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 6 — DELIVERY ANALYSIS                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Delivery Analysis</div>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <p class="label">Most Ordered To (City)</p>
+            <p class="value highlight" th:text="${report.deliveryAnalysis.mostOrderedToCity}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Most Ordered To (State)</p>
+            <p class="value" th:text="${report.deliveryAnalysis.mostOrderedToState}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Total Delivery Charges Paid</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.deliveryAnalysis.totalDeliveryChargesPaid, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Free Delivery Orders</p>
+            <p class="value green" th:text="${report.deliveryAnalysis.freeDeliveryOrderCount}"></p>
+        </div>
+    </div>
+
+    <div class="section-title">Orders by City</div>
+    <table>
+        <thead><tr><th>City</th><th>Orders</th></tr></thead>
+        <tbody>
+            <tr th:each="entry : ${report.deliveryAnalysis.cityOrderCountMap}">
+                <td th:text="${entry.key}"></td>
+                <td th:text="${entry.value}"></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 7 — ORDER STATUS SUMMARY                   -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Order Status Summary</div>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <p class="label">Total Orders</p>
+            <p class="value" th:text="${report.orderStatusSummary.totalOrders}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Delivered</p>
+            <p class="value green" th:text="${report.orderStatusSummary.deliveredCount}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Cancelled</p>
+            <p class="value highlight" th:text="${report.orderStatusSummary.cancelledCount}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Returned</p>
+            <p class="value" th:text="${report.orderStatusSummary.returnedCount}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Pending</p>
+            <p class="value" th:text="${report.orderStatusSummary.pendingCount}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Cancellation Rate</p>
+            <p class="value highlight" th:text="${#numbers.formatDecimal(report.orderStatusSummary.cancellationRate, 1, 0)} + '%'"></p>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-half">
+            <div class="section-title">Status Distribution</div>
+            <img th:src="'data:image/png;base64,' + ${report.orderStatusSummary.statusPieChartBase64}" class="chart-img" alt="Status Chart"/>
+        </div>
+        <div class="chart-half">
+            <div class="section-title">Breakdown</div>
+            <table>
+                <thead><tr><th>Status</th><th>Count</th></tr></thead>
+                <tbody>
+                    <tr th:each="entry : ${report.orderStatusSummary.statusBreakdown}">
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${entry.key == 'DELIVERED'} ? 'badge-green' : (${entry.key == 'CANCELLED'} ? 'badge-red' : 'badge-yellow')"
+                                  th:text="${entry.key}">
+                            </span>
+                        </td>
+                        <td th:text="${entry.value}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 8 — SPENDING TREND                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+    <div class="section-title" style="margin-top:0;">Spending Trend</div>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <p class="label">Highest Spend Month</p>
+            <p class="value highlight" th:text="${report.spendingTrend.highestSpendMonth}"></p>
+            <p class="label" th:text="'₹' + ${#numbers.formatDecimal(report.spendingTrend.highestSpendAmount, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Lowest Spend Month</p>
+            <p class="value" th:text="${report.spendingTrend.lowestSpendMonth}"></p>
+            <p class="label" th:text="'₹' + ${#numbers.formatDecimal(report.spendingTrend.lowestSpendAmount, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+        <div class="stat-box">
+            <p class="label">Avg Monthly Spend</p>
+            <p class="value" th:text="'₹' + ${#numbers.formatDecimal(report.spendingTrend.averageMonthlySpend, 1, 'COMMA', 2, 'POINT')}"></p>
+        </div>
+    </div>
+
+    <div class="section-title">Month-over-Month Spend</div>
+    <img th:src="'data:image/png;base64,' + ${report.spendingTrend.spendingLineChartBase64}" class="chart-img" alt="Spending Trend Chart"/>
+
+    <table style="margin-top:20px;">
+        <thead><tr><th>Month</th><th>Amount Spent</th></tr></thead>
+        <tbody>
+            <tr th:each="entry : ${report.spendingTrend.monthlySpendMap}">
+                <td th:text="${entry.key}"></td>
+                <td th:text="'₹' + ${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p th:text="${report.coverPage.firmName} + ' — Order Analysis Report'"></p>
+        <p>For support, contact support@motocart.com</p>
+    </div>
+</div>
+
+</body>
+</html>

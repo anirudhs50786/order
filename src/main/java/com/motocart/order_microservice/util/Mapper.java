@@ -11,6 +11,8 @@ import com.motocart.library.common.event.OrderEvent;
 import com.motocart.library.common.types.InventoryActionType;
 import com.motocart.order_microservice.cart.entity.CartEntity;
 import com.motocart.order_microservice.cart.entity.CartItemEntity;
+import com.motocart.order_microservice.document.vo.summary.OrderItemVO;
+import com.motocart.order_microservice.document.vo.summary.OrderSummaryVO;
 import com.motocart.order_microservice.order.entity.OrderEntity;
 import com.motocart.order_microservice.order.entity.OrderItemsEntity;
 
@@ -106,6 +108,36 @@ public final class Mapper {
                                 .quantity(item.getQuantity())
                                 .build()
                 ).toList())
+                .build();
+    }
+
+    public static OrderSummaryVO toOrderSummaryVO(OrderEntity orderEntity) {
+        List<OrderItemVO> items = orderEntity.getOrderItems().stream()
+                .map(item -> OrderItemVO.builder()
+                        .productName(item.getProductName())
+                        .quantity(item.getQuantity())
+                        .productPrice(item.getProductPrice())
+                        .lineTotal(item.getLineTotal())
+                        .imageUrl(item.getImageUrl())
+                        .build())
+                .toList();
+
+        return OrderSummaryVO.builder()
+                .orderId(orderEntity.getOrderId())
+                .orderStatus(orderEntity.getOrderStatus().toString())
+                .createdAt(orderEntity.getCreatedAt())
+                .addressLine(orderEntity.getDeliveryAddressLine())
+                .landmark(orderEntity.getDeliveryLandmark())
+                .city(orderEntity.getDeliveryCity())
+                .state(orderEntity.getDeliveryState())
+                .zipCode(orderEntity.getDeliveryZipCode())
+                .country(orderEntity.getDeliveryCountry())
+                .orderItems(items)
+                .subTotal(orderEntity.getSubTotal())
+                .discountAmount(orderEntity.getDiscountAmount())
+                .deliveryCharges(orderEntity.getDeliveryCharges())
+                .platformFees(orderEntity.getPlatformFees())
+                .totalAmount(orderEntity.getTotalAmount())
                 .build();
     }
 }

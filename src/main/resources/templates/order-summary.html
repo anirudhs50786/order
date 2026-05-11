@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #333; padding: 30px; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 2px solid #e63946; }
+        .logo { font-size: 24px; font-weight: bold; color: #e63946; }
+        .order-meta { text-align: right; }
+        .order-meta h2 { font-size: 16px; color: #333; }
+        .order-meta p { color: #777; font-size: 12px; }
+
+        .section { margin-top: 24px; }
+        .section-title { font-size: 13px; font-weight: bold; color: #e63946; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+
+        .two-col { display: flex; justify-content: space-between; gap: 20px; }
+        .col { flex: 1; }
+        .col p { margin-bottom: 4px; line-height: 1.6; }
+        .label { color: #777; font-size: 12px; }
+
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        thead tr { background: #f8f8f8; }
+        th { padding: 10px 12px; text-align: left; font-size: 12px; color: #555; border-bottom: 1px solid #ddd; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .product-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+        .text-right { text-align: right; }
+
+        .billing-table { width: 320px; margin-left: auto; margin-top: 16px; }
+        .billing-table td { padding: 6px 10px; border: none; }
+        .billing-table .total-row td { font-weight: bold; font-size: 14px; border-top: 2px solid #e63946; color: #e63946; padding-top: 10px; }
+        .discount { color: #28a745; }
+
+        .payment-grid { display: flex; gap: 40px; margin-top: 10px; }
+        .payment-grid .item p:first-child { color: #777; font-size: 11px; }
+        .payment-grid .item p:last-child { font-weight: bold; margin-top: 2px; }
+
+        .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 16px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">MotoCart</div>
+        <div class="order-meta">
+            <h2>Order #<span th:text="${order.orderId}"></span></h2>
+            <p th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy, hh:mm a')}"></p>
+            <span class="status-badge"
+                  th:classappend="${order.orderStatus == 'DELIVERED'} ? 'status-confirmed' : (${order.orderStatus == 'CANCELLED'} ? 'status-cancelled' : 'status-pending')"
+                  th:text="${order.orderStatus}">
+            </span>
+        </div>
+    </div>
+
+    <!-- Customer & Delivery -->
+    <div class="section">
+        <div class="section-title">Delivery Information</div>
+        <div class="two-col">
+            <div class="col">
+                <p class="label">Customer</p>
+                <p th:text="${order.customerName}"></p>
+                <p th:text="${order.email}"></p>
+                <p th:text="${order.phone}"></p>
+            </div>
+            <div class="col">
+                <p class="label">Deliver To</p>
+                <p th:text="${order.addressLine}"></p>
+                <p th:if="${order.landmark != null}" th:text="${'Near ' + order.landmark}"></p>
+                <p th:text="${order.city + ', ' + order.state + ' - ' + order.zipCode}"></p>
+                <p th:text="${order.country}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="section">
+        <div class="section-title">Order Items</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th>Qty</th>
+                    <th class="text-right">Line Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${order.orderItems}">
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img th:if="${item.imageUrl != null}" th:src="${item.imageUrl}" class="product-img" alt="product"/>
+                            <span th:text="${item.productName}"></span>
+                        </div>
+                    </td>
+                    <td th:text="${'₹' + #numbers.formatDecimal(item.productPrice, 1, 'COMMA', 0, 'POINT')}"></td>
+                    <td th:text="${item.quantity}"></td>
+                    <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(item.lineTotal, 1, 'COMMA', 0, 'POINT')}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Billing Breakdown -->
+        <table class="billing-table">
+            <tr>
+                <td class="label">Subtotal</td>
+                <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(order.subTotal, 1, 'COMMA', 0, 'POINT')}"></td>
+            </tr>
+            <tr th:if="${order.discountAmount > 0}">
+                <td class="label discount">Discount</td>
+                <td class="text-right discount" th:text="${'-₹' + #numbers.formatDecimal(order.discountAmount, 1, 'COMMA', 0, 'POINT')}"></td>
+            </tr>
+            <tr>
+                <td class="label">Delivery Charges</td>
+                <td class="text-right" th:text="${order.deliveryCharges == 0 ? 'FREE' : '₹' + #numbers.formatDecimal(order.deliveryCharges, 1, 'COMMA', 0, 'POINT')}"></td>
+            </tr>
+            <tr>
+                <td class="label">Platform Fees</td>
+                <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(order.platformFees, 1, 'COMMA', 0, 'POINT')}"></td>
+            </tr>
+            <tr class="total-row">
+                <td>Total</td>
+                <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(order.totalAmount, 1, 'COMMA', 0, 'POINT')}"></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Payment Info -->
+    <div class="section">
+        <div class="section-title">Payment Information</div>
+        <div class="payment-grid">
+            <div class="item">
+                <p>Method</p>
+                <p th:text="${order.paymentMethod}"></p>
+            </div>
+            <div class="item">
+                <p>Status</p>
+                <p th:text="${order.paymentStatus}"></p>
+            </div>
+            <div class="item">
+                <p>Transaction ID</p>
+                <p th:text="${order.transactionId != null ? order.transactionId : '-'}"></p>
+            </div>
+            <div class="item">
+                <p>Payment Date</p>
+                <p th:text="${order.paymentDate != null ? #temporals.format(order.paymentDate, 'dd MMM yyyy') : '-'}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Thank you for shopping with MotoCart!</p>
+        <p>For support, contact support@motocart.com</p>
+    </div>
+
+</body>
+</html>
