@@ -5,6 +5,8 @@ import com.motocart.library.common.dto.CartItemsDTO;
 import com.motocart.library.common.dto.request.BillerItemDTO;
 import com.motocart.library.common.dto.request.BillerRequestDTO;
 import com.motocart.library.common.dto.response.BillerResponseDTO;
+import com.motocart.library.common.dto.response.OrderItemResponseDTO;
+import com.motocart.library.common.dto.response.OrderResponseDTO;
 import com.motocart.library.common.event.CartEvent;
 import com.motocart.library.common.event.InventoryEvent;
 import com.motocart.library.common.event.OrderEvent;
@@ -139,5 +141,37 @@ public final class Mapper {
                 .platformFees(orderEntity.getPlatformFees())
                 .totalAmount(orderEntity.getTotalAmount())
                 .build();
+    }
+
+    public static OrderResponseDTO toOrderResponseDTO(OrderEntity orderEntity) {
+        OrderResponseDTO.builder()
+                .orderId(orderEntity.getOrderId())
+                .userId(orderEntity.getUserId())
+                .orderStatus(orderEntity.getOrderStatus())
+                .totalAmount(orderEntity.getTotalAmount())
+                .subTotal(orderEntity.getSubTotal())
+                .discountAmount(orderEntity.getDiscountAmount())
+                .platformFees(orderEntity.getPlatformFees())
+                .deliveryCharges(orderEntity.getDeliveryCharges())
+                .deliveryAddressLine(orderEntity.getDeliveryAddressLine())
+                .deliveryLandmark(orderEntity.getDeliveryLandmark())
+                .deliveryCity(orderEntity.getDeliveryCity())
+                .deliveryState(orderEntity.getDeliveryState())
+                .deliveryZipCode(orderEntity.getDeliveryZipCode())
+                .deliveryCountry(orderEntity.getDeliveryCountry())
+                .createdAt(orderEntity.getCreatedAt())
+                .updatedAt(orderEntity.getUpdatedAt())
+                .itemsResponseDTO(orderEntity.getOrderItems().stream().map(item ->
+                        OrderItemResponseDTO.builder()
+                                .productId(item.getProductId())
+                                .productName(item.getProductName())
+                                .productPrice(item.getProductPrice())
+                                .quantity(item.getQuantity())
+                                .lineTotal(item.getLineTotal())
+                                .imageUrl(item.getImageUrl())
+                                .build()
+                ).toList())
+                .build();
+        return null;
     }
 }

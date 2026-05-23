@@ -3,10 +3,13 @@ package com.motocart.order_microservice.order.service;
 import com.motocart.library.common.dto.request.BillerItemDTO;
 import com.motocart.library.common.dto.request.BillerRequestDTO;
 import com.motocart.library.common.dto.response.BillerResponseDTO;
+import com.motocart.library.common.dto.response.OrderResponseDTO;
 import com.motocart.library.common.event.InventoryEvent;
 import com.motocart.library.common.event.OrderEvent;
+import com.motocart.library.common.exception.GlobalException;
 import com.motocart.library.common.types.InventoryActionType;
 import com.motocart.library.common.types.OrderEventType;
+import com.motocart.library.security.authentication.EntitlementService;
 import com.motocart.order_microservice.cart.entity.CartEntity;
 import com.motocart.order_microservice.cart.service.CartManagementService;
 import com.motocart.order_microservice.integration.BillerServiceClient;
@@ -30,17 +33,25 @@ public class OrderManagementService {
 
     public OrderManagementService(CartManagementService cartManagementService,
                                   OrderRepository orderRepository,
-                                  InventoryEventProducer inventoryEventProducer, BillerServiceClient billerServiceClient) {
+                                  InventoryEventProducer inventoryEventProducer,
+                                  BillerServiceClient billerServiceClient) {
         this.cartManagementService = cartManagementService;
         this.orderRepository = orderRepository;
         this.inventoryEventProducer = inventoryEventProducer;
         this.billerServiceClient = billerServiceClient;
     }
 
+    public OrderResponseDTO getOrderDetails(int order) {
+        OrderEntity orderEntity  = orderRepository.findById(order).orElseThrow(() -> new GlobalException("Order not found"));
+        EntitlementService.isResourceOwner(orderEntity.getUserId());
+        return Mapper.toOrderResponseDTO(orderEntity);
+    }
+
     public void processOrderEvent(OrderEvent orderEvent) {
         switch (orderEvent.getOrderEventType()){
             case OrderEventType.ORDER_INITIATED -> processOrderInitiatedEvent(orderEvent);
 
+            // COD
             case OrderEventType.ORDER_CONFIRMED -> processOrderConfirmedEvent(orderEvent);
 
             case OrderEventType.PAYMENT_COMPLETED -> processPaymentCompletedEvent(orderEvent);
@@ -79,6 +90,7 @@ public class OrderManagementService {
     }
 
     private void processPaymentCompletedEvent(OrderEvent orderEvent) {
+
         // process payment completed event
     }
 
