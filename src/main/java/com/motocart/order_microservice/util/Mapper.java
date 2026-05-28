@@ -61,7 +61,7 @@ public final class Mapper {
     }
 
     public static OrderEntity copyToOrderEntity(CartEntity cartEntity, OrderEvent orderEvent, BillerResponseDTO billerResponseDTO) {
-        return OrderEntity.builder()
+        OrderEntity orderEntity = OrderEntity.builder()
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .totalAmount(billerResponseDTO.getTotalAmount())
@@ -73,12 +73,14 @@ public final class Mapper {
                 .orderStatus(orderEvent.getOrderStatus())
                 .orderItems(toOrderItemList(cartEntity.getCartItems()))
                 .build();
+        orderEntity.getOrderItems().forEach(orderItem -> orderItem.setOrder(orderEntity));
+        return orderEntity;
     }
 
     private static List<OrderItemsEntity> toOrderItemList(List<CartItemEntity> cartItemEntities) {
-        List<OrderItemsEntity> cartItems = new ArrayList<>();
+        List<OrderItemsEntity> orderItemsEntities = new ArrayList<>();
         for(var item : cartItemEntities) {
-            cartItems.add(OrderItemsEntity.builder()
+            orderItemsEntities.add(OrderItemsEntity.builder()
                     .lineTotal(item.getQuantity() * item.getProductPrice())
                     .productName(item.getProductName())
                     .productPrice(item.getProductPrice())
@@ -87,7 +89,7 @@ public final class Mapper {
                     .imageUrl(item.getImageUrl())
                     .build());
         }
-        return cartItems;
+        return orderItemsEntities;
     }
 
     public static InventoryEvent toReserveInventoryEvent(OrderEntity orderEntity) {
@@ -144,7 +146,7 @@ public final class Mapper {
     }
 
     public static OrderResponseDTO toOrderResponseDTO(OrderEntity orderEntity) {
-        OrderResponseDTO.builder()
+        return OrderResponseDTO.builder()
                 .orderId(orderEntity.getOrderId())
                 .userId(orderEntity.getUserId())
                 .orderStatus(orderEntity.getOrderStatus())
@@ -172,6 +174,5 @@ public final class Mapper {
                                 .build()
                 ).toList())
                 .build();
-        return null;
     }
 }

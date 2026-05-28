@@ -1,6 +1,5 @@
 package com.motocart.order_microservice.order.service;
 
-import com.motocart.library.common.dto.request.BillerItemDTO;
 import com.motocart.library.common.dto.request.BillerRequestDTO;
 import com.motocart.library.common.dto.response.BillerResponseDTO;
 import com.motocart.library.common.dto.response.OrderResponseDTO;
@@ -20,8 +19,6 @@ import com.motocart.order_microservice.util.Mapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderManagementService {
@@ -30,15 +27,18 @@ public class OrderManagementService {
     private final OrderRepository orderRepository;
     private final InventoryEventProducer inventoryEventProducer;
     private final BillerServiceClient billerServiceClient;
+    private final OrderValidatorService orderValidatorService;
 
     public OrderManagementService(CartManagementService cartManagementService,
                                   OrderRepository orderRepository,
                                   InventoryEventProducer inventoryEventProducer,
-                                  BillerServiceClient billerServiceClient) {
+                                  BillerServiceClient billerServiceClient,
+                                  OrderValidatorService orderValidatorService) {
         this.cartManagementService = cartManagementService;
         this.orderRepository = orderRepository;
         this.inventoryEventProducer = inventoryEventProducer;
         this.billerServiceClient = billerServiceClient;
+        this.orderValidatorService = orderValidatorService;
     }
 
     public OrderResponseDTO getOrderDetails(int order) {
@@ -48,6 +48,7 @@ public class OrderManagementService {
     }
 
     public void processOrderEvent(OrderEvent orderEvent) {
+        orderValidatorService.validateOrderEvent(orderEvent);
         switch (orderEvent.getOrderEventType()){
             case OrderEventType.ORDER_INITIATED -> processOrderInitiatedEvent(orderEvent);
 
@@ -91,22 +92,55 @@ public class OrderManagementService {
 
     private void processPaymentCompletedEvent(OrderEvent orderEvent) {
 
-        // process payment completed event
+        OrderEntity orderEntity = getOrderEntity(orderEvent.getOrderId());
+        updateOrderStatus(orderEntity, orderEvent);
+        // send payment success email / notification if required
     }
 
     private void processOrderCancelledEvent(OrderEvent orderEvent) {
-        // process order cancelled event
+
+        OrderEntity orderEntity = getOrderEntity(orderEvent.getOrderId());
+        updateOrderStatus(orderEntity, orderEvent);
+        inventoryEventProducer.sendInventoryEvent(InventoryEvent.builder()
+                .actionType(InventoryActionType.RELEASE)
+                .orderId(orderEvent.getOrderId())
+                .build());
+        // send cancellation email / notification if required
     }
 
     private void processPaymentFailedEvent(OrderEvent orderEvent) {
-        //
+
+        OrderEntity orderEntity = getOrderEntity(orderEvent.getOrderId());
+        updateOrderStatus(orderEntity, orderEvent);
+        inventoryEventProducer.sendInventoryEvent(InventoryEvent.builder()
+                .actionType(InventoryActionType.RELEASE)
+                .orderId(orderEvent.getOrderId())
+                .build());
+        // send payment failed email / notification if required
     }
 
     private void processOrderDeliveredEvent(OrderEvent orderEvent) {
-        // process order delivered event
+
+        OrderEntity orderEntity = getOrderEntity(orderEvent.getOrderId());
+        updateOrderStatus(orderEntity, orderEvent);
+        // send delivery confirmation email / notification if required
     }
 
     private void processShipmentDispatchedEvent(OrderEvent orderEvent) {
-        // process shipment dispatched event
+
+        OrderEntity orderEntity = getOrderEntity(orderEvent.getOrderId());
+        updateOrderStatus(orderEntity, orderEvent);
+        // send shipment dispatched email / notification if required
+    }
+
+    private OrderEntity getOrderEntity(int orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new GlobalException("Order not found"));
+    }
+
+    private void updateOrderStatus(OrderEntity orderEntity, OrderEvent orderEvent) {
+        orderEntity.setOrderStatus(orderEvent.getOrderStatus());
+        orderEntity.setUpdatedAt(Instant.now());
+        orderRepository.save(orderEntity);
     }
 }
