@@ -6,7 +6,7 @@ import com.motocart.library.common.dto.response.BillerResponseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
-@FeignClient
+@FeignClient(name = "biller-server", path = "/closedcart/billing")
 public interface BillerServiceClient {
 
     @PostMapping

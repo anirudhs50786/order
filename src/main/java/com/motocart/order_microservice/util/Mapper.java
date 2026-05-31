@@ -9,18 +9,23 @@ import com.motocart.library.common.dto.response.OrderItemResponseDTO;
 import com.motocart.library.common.dto.response.OrderResponseDTO;
 import com.motocart.library.common.event.CartEvent;
 import com.motocart.library.common.event.InventoryEvent;
+import com.motocart.library.common.event.NotificationEvent;
 import com.motocart.library.common.event.OrderEvent;
 import com.motocart.library.common.types.InventoryActionType;
+import com.motocart.library.common.types.NotificationType;
 import com.motocart.order_microservice.cart.entity.CartEntity;
 import com.motocart.order_microservice.cart.entity.CartItemEntity;
 import com.motocart.order_microservice.document.vo.summary.OrderItemVO;
 import com.motocart.order_microservice.document.vo.summary.OrderSummaryVO;
 import com.motocart.order_microservice.order.entity.OrderEntity;
 import com.motocart.order_microservice.order.entity.OrderItemsEntity;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class Mapper {
 
@@ -175,4 +180,28 @@ public final class Mapper {
                 ).toList())
                 .build();
     }
+
+    public static NotificationEvent toOrderConfirmationNotificationEvent(OrderEvent orderEvent, OrderEntity orderEntity) {
+        List<Item> items = new ArrayList<>();
+        orderEntity.getOrderItems().forEach(orderItem -> items.add(getItem(orderItem)));
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("orderId", orderEvent.getOrderId());
+        payload.put("totalAmount", orderEntity.getTotalAmount());
+        payload.put("items", items);
+        return NotificationEvent.builder()
+                .notificationType(NotificationType.ORDER_COMPLETE)
+                .userId(orderEvent.getUserId())
+                .payload(payload)
+                .build();
+    }
+
+    private static @NonNull Item getItem(OrderItemsEntity orderItem) {
+        return new Item(
+                orderItem.getProductName(),
+                String.valueOf(orderItem.getProductPrice()),
+                String.valueOf(orderItem.getQuantity())
+        );
+    }
+
+    record Item(String name, String price, String quantity) {}
 }

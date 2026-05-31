@@ -8,12 +8,13 @@ import com.motocart.library.common.event.OrderEvent;
 import com.motocart.library.common.exception.GlobalException;
 import com.motocart.library.common.types.InventoryActionType;
 import com.motocart.library.common.types.OrderEventType;
-import com.motocart.library.security.authentication.EntitlementService;
+import com.motocart.library.security.authorization.EntitlementService;
 import com.motocart.order_microservice.cart.entity.CartEntity;
 import com.motocart.order_microservice.cart.service.CartManagementService;
 import com.motocart.order_microservice.integration.BillerServiceClient;
 import com.motocart.order_microservice.order.entity.OrderEntity;
 import com.motocart.order_microservice.order.kafka.producer.InventoryEventProducer;
+import com.motocart.order_microservice.order.kafka.producer.NotificationEventProducer;
 import com.motocart.order_microservice.order.repository.OrderRepository;
 import com.motocart.order_microservice.util.Mapper;
 import org.springframework.stereotype.Service;
@@ -28,17 +29,20 @@ public class OrderManagementService {
     private final InventoryEventProducer inventoryEventProducer;
     private final BillerServiceClient billerServiceClient;
     private final OrderValidatorService orderValidatorService;
+    private final NotificationEventProducer notificationEventProducer;
 
     public OrderManagementService(CartManagementService cartManagementService,
                                   OrderRepository orderRepository,
                                   InventoryEventProducer inventoryEventProducer,
                                   BillerServiceClient billerServiceClient,
-                                  OrderValidatorService orderValidatorService) {
+                                  OrderValidatorService orderValidatorService,
+                                  NotificationEventProducer notificationEventProducer) {
         this.cartManagementService = cartManagementService;
         this.orderRepository = orderRepository;
         this.inventoryEventProducer = inventoryEventProducer;
         this.billerServiceClient = billerServiceClient;
         this.orderValidatorService = orderValidatorService;
+        this.notificationEventProducer = notificationEventProducer;
     }
 
     public OrderResponseDTO getOrderDetails(int order) {
@@ -78,16 +82,15 @@ public class OrderManagementService {
 
     private void processOrderConfirmedEvent(OrderEvent orderEvent) {
 
-        orderRepository.findById(orderEvent.getOrderId()).ifPresent(orderEntity -> {
-            orderEntity.setOrderStatus(orderEvent.getOrderStatus());
-            orderEntity.setUpdatedAt(Instant.now());
-            orderRepository.save(orderEntity);
-            inventoryEventProducer.sendInventoryEvent(InventoryEvent.builder()
-                    .actionType(InventoryActionType.DEDUCT)
-                    .orderId(orderEvent.getOrderId())
-                    .build());
-            //send email
-        });
+        OrderEntity orderEntity = orderRepository.findById(orderEvent.getOrderId()).orElseThrow(() -> new GlobalException("Order not found"));;
+        orderEntity.setOrderStatus(orderEvent.getOrderStatus());
+        orderEntity.setUpdatedAt(Instant.now());
+        orderRepository.save(orderEntity);
+        inventoryEventProducer.sendInventoryEvent(InventoryEvent.builder()
+                .actionType(InventoryActionType.DEDUCT)
+                .orderId(orderEvent.getOrderId())
+                .build());
+        notificationEventProducer.sendNotificationEvent(Mapper.toOrderConfirmationNotificationEvent(orderEvent, orderEntity));
     }
 
     private void processPaymentCompletedEvent(OrderEvent orderEvent) {
